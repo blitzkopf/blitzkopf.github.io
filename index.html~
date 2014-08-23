@@ -1,0 +1,584 @@
+<html>
+
+<head>
+<title>Bunga Bunga</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+<script type="text/javascript" src="jquery-2.1.1.js"></script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+
+    varying vec4 vColor;
+	varying vec3 vLightWeighting;
+	//uniform vec4 vColor2;
+
+    void main(void) {
+		gl_FragColor = vec4(vColor.rgb*vLightWeighting,vColor.a);
+        //gl_FragColor = vColor;
+		//gl_FragColor = vec4(0.1, 1.0, 0.0, 1.0);
+    }
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+	//attribute vec3 aVertexNormal;
+    attribute vec4 aVertexColor;
+
+	uniform vec4 uVertexColor;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform mat3 uNMatrix;
+
+	uniform vec3 uAmbientColor;
+
+	uniform vec3 uLightingDirection;
+	uniform vec3 uDirectionalColor;
+
+	uniform bool uUseLighting;
+
+    varying vec4 vColor;
+	varying vec3 vLightWeighting;
+
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+		//vColor = aVertexColor;
+		vColor = vec4(uVertexColor[0],uVertexColor[1],uVertexColor[2],uVertexColor[3]);
+		//vColor = vec4(0.1, 1.0, 0.0, 1.0);
+		if (!uUseLighting) {
+		  vLightWeighting = vec3(1.0, 1.0, 1.0);
+		} else {
+		  vec3 transformedNormal = uNMatrix * aVertexPosition;
+		  float directionalLightWeighting = max(dot(transformedNormal, uLightingDirection), 0.0);
+		  vLightWeighting = uAmbientColor + uDirectionalColor * directionalLightWeighting;
+		}
+
+    }
+</script>
+      
+
+<script type="text/javascript">
+
+    var gl;
+
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        } catch (e) {
+        }
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+    }
+
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+
+    var shaderProgram;
+
+    function initShaders() {
+        var fragmentShader = getShader(gl, "shader-fs");
+        var vertexShader = getShader(gl, "shader-vs");
+
+        shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgram);
+
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
+  /*      shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+*/
+		shaderProgram.uColorAttribute = gl.getUniformLocation(shaderProgram, "uVertexColor");
+        //gl.enableVertexAttribArray(shaderProgram.uColorAttribute);
+
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+		shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
+ 		shaderProgram.useLightingUniform = gl.getUniformLocation(shaderProgram, "uUseLighting");
+        shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
+        shaderProgram.lightingDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightingDirection");
+        shaderProgram.directionalColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalColor");
+    }
+
+
+    var mvMatrix = mat4.create();
+    var mvMatrixStack = [];
+    var pMatrix = mat4.create();
+
+    function mvPushMatrix() {
+        var copy = mat4.create();
+        mat4.set(mvMatrix, copy);
+        mvMatrixStack.push(copy);
+    }
+
+    function mvPopMatrix() {
+        if (mvMatrixStack.length == 0) {
+            throw "Invalid popMatrix!";
+        }
+        mvMatrix = mvMatrixStack.pop();
+    }
+
+
+    function setMatrixUniforms() {
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+
+		var normalMatrix = mat3.create();
+        mat4.toInverseMat3(mvMatrix, normalMatrix);
+        mat3.transpose(normalMatrix);
+        gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
+    }
+
+
+    function degToRad(degrees) {
+        return degrees * Math.PI / 180;
+    }
+	
+
+
+    var icoVertexPositionBuffer;
+	var circVertexPositionBuffer;
+
+    var icoVertexColorBuffer;
+    var icoVertexIndexBuffer;
+	var vertices;
+	var circVert = [];
+
+	var timeNow;
+
+	var firstQuakeTime;
+	var lastQuakeTime;
+	var duration;
+
+	var animLength = 90; // seconds
+	var animTime;
+
+	var midPointCache = {};
+	function getMiddlePoint(p0,p1) {
+		if(p0 < p1 ) {
+			key = p0+":"+p1;
+		} else {
+			key = p1+":"+p0;
+		}
+		ret = midPointCache[key];
+		if(ret > 0) {
+			return ret;
+		} else {
+			var p2 = {};
+			
+			p2.x = (vertices[p0*3] +vertices[p1*3] )/2;
+			p2.y = (vertices[p0*3+1] +vertices[p1*3+1] )/2;
+			p2.z = (vertices[p0*3+2] +vertices[p1*3+2] )/2;
+
+			length = Math.sqrt(p2.x * p2.x + p2.y * p2.y + p2.z * p2.z);
+			p2.x = p2.x/length;
+			p2.y = p2.y/length;
+			p2.z = p2.z/length;
+			
+			ret = vertices.length/3;
+			vertices.push(p2.x);
+			vertices.push(p2.y);
+			vertices.push(p2.z);
+			midPointCache[key]=ret;
+			return ret;
+
+		}
+		
+	}
+
+    function initBuffers() {
+
+
+		// http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
+		//t = 1.6180339887; // (1.0 + Math.Sqrt(5.0)) / 2.0;
+		s = 0.447213595; // 1 / sqrt(5)
+		t = 0.894427191; // 2 / sqrt(5)
+
+        vertices = [
+            
+            -s,    t,  0.0,
+             s,    t,  0.0,
+            -s,   -t,  0.0,
+             s,   -t,  0.0,
+		
+             0.0, -s,    t,
+             0.0,  s,    t,
+             0.0, -s,   -t,
+             0.0,  s,   -t,
+
+            	
+               t,  0.0, -s,
+               t,  0.0,  s,
+              -t,  0.0, -s,
+              -t,  0.0,  s,
+
+        ];
+        
+        var icoVertexIndices = [
+			// 5 faces around point 0
+            0, 11, 5,      
+			0, 5, 1,   
+            0, 1, 7,      
+			0, 7, 10,    
+            0, 10, 11,
+			// 5 adjacent faces
+			1, 5, 9,
+			5, 11, 4,
+			11, 10, 2,
+			10, 7, 6,
+			7, 1, 8,
+			// 5 faces around point 3
+			3, 9, 4,
+			3, 4, 2,
+			3, 2, 6,
+			3, 6, 8,
+			3, 8, 9,
+			// 5 adjacent faces
+			4, 9, 5,
+			2, 4, 11,
+			6, 2, 10,
+			8, 6, 7,
+			9, 8, 1,
+
+        ];
+		
+		for ( k = 0 ; k < 2 ; k++) {
+			var icoVertexIndices2 = [];	
+			for(i=0; i<icoVertexIndices.length ; i+=3) {
+				v0 = icoVertexIndices[i];
+				v1 = icoVertexIndices[i+1];
+				v2 = icoVertexIndices[i+2];
+
+				a = getMiddlePoint(v0,v1);
+				b = getMiddlePoint(v1,v2);
+				c = getMiddlePoint(v2,v0);
+
+				icoVertexIndices2[i*4+0] = v0 ;
+				icoVertexIndices2[i*4+1] = a ;
+				icoVertexIndices2[i*4+2] = c ;
+
+				icoVertexIndices2[i*4+3] = v1 ;
+				icoVertexIndices2[i*4+4] = b ;
+				icoVertexIndices2[i*4+5] = a ;
+
+				icoVertexIndices2[i*4+6] = v2 ;
+				icoVertexIndices2[i*4+7] = c ;
+				icoVertexIndices2[i*4+8] = b ;
+
+				icoVertexIndices2[i*4+9] = a ;
+				icoVertexIndices2[i*4+10] = b ;
+				icoVertexIndices2[i*4+11] = c ;
+
+			}
+
+			icoVertexIndices = icoVertexIndices2;
+		}
+		icoVertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, icoVertexPositionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+        icoVertexPositionBuffer.itemSize = 3;
+        icoVertexPositionBuffer.numItems = vertices.length/3;
+
+        icoVertexIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, icoVertexIndexBuffer);
+
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(icoVertexIndices), gl.STATIC_DRAW);
+        icoVertexIndexBuffer.itemSize = 1;
+        icoVertexIndexBuffer.numItems = icoVertexIndices.length;
+    }
+	
+	function initCircle(parts) {
+		for(i=0 ; i<parts ; i++) {
+			circVert[3*i + 0] = Math.sin(2.0*i*Math.PI/parts);
+			circVert[3*i + 1] = Math.cos(2.0*i*Math.PI/parts);
+			circVert[3*i + 2] = 0;
+		}
+		circVertexPositionBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER,circVertexPositionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(circVert),gl.STATIC_DRAW);
+		circVertexPositionBuffer.itemSize = 3;
+		circVertexPositionBuffer.numItems = parts;
+	}
+	
+	function Quake(lat,lon,depth,sz,time) {
+		this.lat=lat;
+		this.lon=lon;
+		this.depth=depth;
+		this.size=sz;
+		this.time=time;
+	}
+	
+	Quake.prototype.getSize = function(time) {
+		return this.size/3;
+	}
+
+	function mapSize(q,time) {
+		var hours = (time - q.date ) / ( 1000*60*60);
+		if (q.size >= 3) {
+			return q.size  / Math.min(hours,1);
+		}
+		return q.size / Math.min(Math.max(0.1,hours),1);
+	}	
+	
+	function sphere2Cart(lat,lon,r) {
+		var point = {};
+		var phi = degToRad(lat);
+		var theta = degToRad(90-lon);
+
+		point.x = r*Math.sin(phi)*Math.cos(theta);
+		point.y = r*Math.sin(phi)*Math.sin(theta);
+		point.z = r*Math.cos(phi);
+		return point;
+	}
+
+	function mapColor(q,time) {
+		var hours = (time - q.date ) / ( 1000*60*60);
+		if (q.size >= 3  ) {
+			return [0.0, 1.0, 0.0 ,1.0 ];
+		}
+		if ( hours <= 4.0 ) {
+			return [ 1.0, 0.0, 0.0, 1.0]; // "#f00";
+		} else if(hours <= 12) {
+			return [ 1.0, 0.4, 0.0, 1.0]; //"#f60";
+		}
+		else if(hours <= 24) {
+			return [ 1.0, 1.0, 0.0, 1.0]; // "#ff0";
+		}
+		else if(hours <= 36) {
+			return [ 0.2, 0.4, 0.8, 1.0]; // "#36c";
+		}
+		else {
+			return [ 0.0, 0.0, 0.4, 1.0]; // "#006";
+		}
+
+	}
+
+    var rIco = 0;
+	var szIco = 0;
+	var quakes = [
+
+		 ];
+	var timeStart;
+    function drawScene(time) {
+		//time = new Date().getTime();
+		document.getElementById("timer").innerHTML=time;
+        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+ 
+        mat4.perspective(50, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0, pMatrix);
+
+        mat4.identity(mvMatrix);
+		var lap = sphere2Cart(64.701,-17,6731-5);
+		var lfp = sphere2Cart(64.7+2*Math.cos((timeNow-timeStart)/5000.0),-17+2*Math.sin((timeNow-timeStart)/5000.0),6731+50);
+		//mat4.lookAt(mvMatrix,[8,8,8],[0,0,0],[0,0,1]);
+		//mvMatrix=mat4.lookAt([65+12*Math.cos((timeNow-timeStart)/1000.0),-17+12*Math.sin((timeNow-timeStart)/1000.0),0],[64.701,-16.994,-5],[0,0,1]);
+
+		//mvMatrix=mat4.lookAt([5815+100*Math.cos((timeNow-timeStart)/1000.0),-1778.0+100*Math.sin((timeNow-timeStart)/1000.0),6441.0],[5815.0,-1778.0,6433.0],[0,0,1]);
+		mvMatrix = mat4.lookAt([lfp.x,lfp.y,lfp.z]  ,[lap.x,lap.y,lap.z],[lap.x,lap.y,lap.z]);
+		gl.uniform1i(shaderProgram.useLightingUniform, 1);
+
+		gl.uniform3f(
+                shaderProgram.ambientColorUniform,
+                0.2, 0.2, 0.2 
+            );
+			var lightingDirection = [ 0.0 , 0.0, -1.0 ];
+            var adjustedLD = vec3.create();
+            vec3.normalize(lightingDirection, adjustedLD);
+            vec3.scale(adjustedLD, -1);
+            gl.uniform3fv(shaderProgram.lightingDirectionUniform, adjustedLD);
+
+            gl.uniform3f(
+                shaderProgram.directionalColorUniform,
+                0.5,0.5,0.5
+            );	
+
+		for ( i in quakes) {
+			
+			q=quakes[i];
+			if(q.date < time ) {
+				mvPushMatrix();
+
+				sz=mapSize(q,time);
+				//sz=20;
+				/*mat4.translate(mvMatrix, [q.latitude, q.longitude, -q.depth/2]);*/
+				mat4.translate(mvMatrix, [q.pos.x, q.pos.y, q.pos.z]);
+
+				mat4.scale(mvMatrix, [ sz,sz,sz ]);
+
+				gl.bindBuffer(gl.ARRAY_BUFFER, icoVertexPositionBuffer);
+				gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, icoVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+		vertexColorAttribute = mapColor(q,time);
+
+		gl.uniform4fv(shaderProgram.uColorAttribute, vertexColorAttribute);
+
+
+				/*gl.bindBuffer(gl.ARRAY_BUFFER, icoVertexColorBuffer);
+				gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, icoVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+*/
+				setMatrixUniforms();
+
+				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, icoVertexIndexBuffer);
+				gl.drawElements(gl.TRIANGLES, icoVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+				
+				
+
+				mvPopMatrix();
+			}
+		}
+
+    	// draw earth wireframe
+		for( lon  = 0; lon < 180 ; lon ++) {
+			mvPushMatrix();
+			//mat4.translate(mvMatrix, [0, 0, 0]);
+
+			mat4.rotate(mvMatrix,Math.PI/2.0,[0,1,0]);
+			mat4.rotate(mvMatrix,lon*2.0*Math.PI/360,[1,0,0]);
+			mat4.scale(mvMatrix,[6731,6731,6731]);
+
+			gl.uniform4fv(shaderProgram.uColorAttribute, [1.0, lon%2, 1.0, 1.0]);
+			setMatrixUniforms();
+			gl.bindBuffer(gl.ARRAY_BUFFER, circVertexPositionBuffer)
+			gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, circVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+			//gl.bindBuffer(gl.ARRAY_BUFFER, circVertexPositionBuffer);
+
+			//gl.drawElements(gl.LINE_LOOP,circVertexPositionBuffer.numItems,gl.UNSIGNED_SHORT,0);
+			gl.drawArrays(gl.LINE_LOOP, 0, circVertexPositionBuffer.numItems);
+
+			mvPopMatrix();
+		
+		} 
+	}
+
+    var lastTime = 0;
+
+    function animate() {
+        timeNow = new Date().getTime();
+		//duration 
+		//animLength
+		
+		t1 = ((timeNow - timeStart) % (animLength*1000))/(animLength*1000);
+
+		animTime = new Date(firstQuakeTime.getTime() + t1* duration);
+
+        if (lastTime != 0) {
+            var elapsed = timeNow - lastTime;
+
+            rIco -= (75 * elapsed) / 1000.0;
+			szIco = 1+Math.sin(timeNow/1000.0);
+
+        }
+        lastTime = timeNow;
+    }
+
+
+    function tick() {
+        requestAnimFrame(tick);
+        animate();
+		drawScene(animTime);        
+    }
+
+
+    function webGLStart() {
+		/*$.getJSON("http://apisis.rasmuskr.dk/earthquake/is",function(resp) {
+			quakes = resp.results;
+			lastQuakeTime = new Date(quakes[0].timestamp);
+			firstQuakeTime = new Date(quakes[quakes.length-1].timestamp);
+			duration = lastQuakeTime - firstQuakeTime;
+			for ( i in quakes ) {
+				quakes[i].date=new Date(quakes[i].timestamp);
+				quakes[i].pos=sphere2Cart(quakes[i].latitude, quakes[i].longitude, 6731.0 - 2.0*quakes[i].depth);
+			}
+		});*/
+
+		$.getJSON("http://isapi.rasmuskr.dk/api/earthquakes/?date=48-hoursago",function(resp) {
+			quakes = resp.items;
+			//new Date(parseInt(data.date * 1000)).getTime();
+			firstQuakeTime = new Date(quakes[0].date * 1000);
+			lastQuakeTime = new Date(quakes[quakes.length-1].date*1000);
+			duration = lastQuakeTime - firstQuakeTime;
+			for ( i in quakes ) {
+				quakes[i].date=new Date(quakes[i].date *1000);
+				quakes[i].pos=sphere2Cart(quakes[i].lat, quakes[i].long, 6731.0 - 2.0*quakes[i].depth);
+			}
+		});
+
+        var canvas = document.getElementById("bunga-bunga-canvas");
+        initGL(canvas);
+        initShaders()
+        initBuffers();
+		initCircle(360);
+
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+		timeStart = new Date().getTime();
+        tick();
+
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+
+
+    <canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
+	<div id="timer"></div>
+    <br/>
+<p class="credit-list">Created by <a href="mailto:blitzkopf@gmail.com">Yngvi Þór</a>, inspired by <a href="baering.github.io">3dBulge</a> 
+ data provided by <a href="http://apis.is" target="_blank">apis.is</a> and caching provided by <a href="http://www.rasmuskr.dk" target="_blank">RasmusKr</a></p>
+
+   </body>
+
+</html>
