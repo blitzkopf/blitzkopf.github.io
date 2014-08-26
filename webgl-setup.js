@@ -145,6 +145,7 @@ var icoNormalVectorBuffer;
 
 var circVertexPositionBuffer;
 var circVertexTextureCoordBuffer;
+var circNormalVectorBuffer;
 
 var mapVertexPositionBuffer;
 var whiteTexture
@@ -331,6 +332,14 @@ function initCircleBuffer(parts) {
 	circVertexPositionBuffer.itemSize = 3;
 	circVertexPositionBuffer.numItems = parts;
 
+	circNormalVectorBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER,circNormalVectorBuffer);
+	// circVert is already normalized, might be possible to use the same buffer ?
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(circVert), gl.STATIC_DRAW);
+	circNormalVectorBuffer.itemSize=3;
+	circNormalVectorBuffer.numItems=circVert.length/3;
+
+
 	circVertexTextureCoordBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, circVertexTextureCoordBuffer);
  	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
@@ -442,6 +451,10 @@ function drawEarthWF(pos,radius)
 	mat4.scale(mvMatrix,[radius,radius,radius]);
 	gl.bindBuffer(gl.ARRAY_BUFFER, circVertexPositionBuffer)
 	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, circVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+	gl.bindBuffer(gl.ARRAY_BUFFER, circNormalVectorBuffer);
+    gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, circNormalVectorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
 	gl.bindBuffer(gl.ARRAY_BUFFER, circVertexTextureCoordBuffer);
 	gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, circVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 	gl.bindTexture(gl.TEXTURE_2D, whiteTexture); 
