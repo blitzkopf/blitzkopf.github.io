@@ -81,8 +81,8 @@
 <script type="text/javascript" src="webgl-setup.js" ></script>
       
 
-<script type="text/javascript">
 
+<script type="text/javascript">
 
 	var timeNow;
 
@@ -95,8 +95,12 @@
 	var animParams = {
 		depthScale: 4.0,
 		animLength: 120, // seconds
-		finalSceneLength: 30 //seconds
-	}
+		finalSceneLength: 30, //seconds
+		minQuakeSize: 0 ,//
+		mapdepth: 0, // km
+		flybyRadius: 2, // degrees
+		flybyHeight: 50 //
+ 	}
 	var animTime;
 
 	
@@ -118,9 +122,9 @@
 			hours = 4;
 		}
 		if (q.size >= 3) {
-			return q.size  / Math.min(hours,1);
+			return q.size  / Math.min(0.2+hours,1);
 		}
-		return q.size / Math.min(Math.max(0.3,hours),1);
+		return q.size / Math.min(0.5+hours,1);
 	}	
 	
 	function mapColor(q,time) {
@@ -145,7 +149,18 @@
 
 	}
 
+	function loadCanvas(dataURL,canvas) {
+        var canvas = document.getElementById(canvas);
+        var context = canvas.getContext('2d');
 
+        // load image from data url
+        var imageObj = new Image();
+        imageObj.onload = function() {
+          context.drawImage(this, 0, 0);
+        };
+
+        imageObj.src = dataURL;
+    }
     var rIco = 0;
 	var szIco = 0;
 	var quakes = [
@@ -155,7 +170,19 @@
 
     function drawScene(time) {
 		document.getElementById("timer").innerHTML=time;
-		var mapdepth = document.getElementById("mapdepth").value;
+
+		animParams.mapdepth = document.getElementById("mapdepth").value;
+		document.getElementById("mapdepthdisp").value=animParams.mapdepth;
+
+		animParams.minQuakeSize = document.getElementById("minQuakeSize").value;
+		document.getElementById("minQuakeDisp").value=animParams.minQuakeSize;
+
+		animParams.flybyRadius = document.getElementById("flybyRadius").value;
+		document.getElementById("flybyRadiusDisp").value=animParams.flybyRadius;
+
+		animParams.flybyHeight = document.getElementById("flybyHeight").value;
+		document.getElementById("flybyHeightDisp").value=animParams.flybyHeight;
+
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
  
@@ -163,7 +190,9 @@
 
         mat4.identity(mvMatrix);
 		var lap = sphere2Cart(64.701,-17,earthRadius-5);
-		var lfp = sphere2Cart(64.7+2*Math.cos((timeNow-timeStart)/5000.0),-17+2*Math.sin((timeNow-timeStart)/5000.0),earthRadius+50);
+		var lfp = sphere2Cart(64.7+animParams.flybyRadius*Math.cos((timeNow-timeStart)/5000.0),-17+
+					animParams.flybyRadius*Math.sin((timeNow-timeStart)/5000.0),
+			earthRadius+animParams.depthScale * animParams.flybyHeight);
 		mvMatrix = mat4.lookAt([lfp.x,lfp.y,lfp.z]  ,[lap.x,lap.y,lap.z],[lap.x,lap.y,lap.z]);
 		/*lap = {x:0,y:0,z:0};
 		lfp = {x:1,y:4,z:5};
@@ -172,14 +201,14 @@
 		for ( i in quakes) {
 			
 			q=quakes[i];
-			if(q.date < time ) {
+			if(q.date < time && q.size >= animParams.minQuakeSize) {
 				drawSphere(q.pos,mapSize(q,time),mapColor(q,time));
 			}
 		}
 		
 		drawEarthWF({x:0,y:0,z:0},earthRadius);
 		//drawMap(sphere2Cart(64.701,-17,earthRadius),3,4,5);
-		drawMap(-animParams.depthScale*mapdepth);
+		drawMap(-animParams.depthScale*animParams.mapdepth);
 	}
 
     var lastTime = 0;
@@ -261,11 +290,20 @@
     	<canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
 		<div id="timer"></div>
     </div>
-	<div id="controls" style="margin-left: 820px">Depth of map:<input id="mapdepth" type="range" min="-40" max="2"  width="20px" heigth="100px"/>
-	(The map is slightly offset, I'm trying to figure it out)
-	<br>
+
+	<div id="controls" style="margin-left: 820px">
+		Depth of map:<br><input id="mapdepth" type="range" min="-40" max="2" step="1" width="20px" heigth="100px"> 
+		<input type="text" id="mapdepthdisp" editable="false"><br>
+	(The map is slightly offset, I'm trying to figure it out)<br>
+		Minimum quake size: <br><input id="minQuakeSize" type="range" min="0" max="8" step="0.2" value="0">
+		<input type="text" id="minQuakeDisp"></input> <br>
+		Flyby radius: <br><input id="flybyRadius" type="range" min="0" max="15" step="0.5" value="5">
+		<input type="text" id="flybyRadiusDisp"></input> <br>
+		Flyby height: <br><input id="flybyHeight" type="range" min="-20" max="20" step="1" value="5">
+		<input type="text" id="flybyHeightDisp"></input> <br>
 	One day I will try to explain what it is I'm actually trying to show you.
 	</div>
+
 </div>
  <div id="credits">
 <p class="credit-list">Created by <a href="mailto:blitzkopf@gmail.com">Yngvi Þór</a>, inspired by <a href="http://baering.github.io">3dBulge</a> 
