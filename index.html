@@ -99,7 +99,8 @@
 		minQuakeSize: 0 ,//
 		mapdepth: 0, // km
 		flybyRadius: 2, // degrees
-		flybyHeight: 50 //
+		flybyHeight: 50, //
+		lookAtDepth: 5
  	}
 	var animTime;
 
@@ -189,7 +190,7 @@
         mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0, pMatrix);
 
         mat4.identity(mvMatrix);
-		var lap = sphere2Cart(64.701,-17,earthRadius-5);
+		var lap = sphere2Cart(64.701,-17,earthRadius-animParams.lookAtDepth*animParams.depthScale);
 		var lfp = sphere2Cart(64.7+animParams.flybyRadius*Math.cos((timeNow-timeStart)/5000.0),-17+
 					animParams.flybyRadius*Math.sin((timeNow-timeStart)/5000.0),
 			earthRadius+animParams.depthScale * animParams.flybyHeight);
@@ -294,13 +295,23 @@
 	<div id="controls" style="margin-left: 820px">
 		Depth of map:<br><input id="mapdepth" type="range" min="-40" max="2" step="1" width="20px" heigth="100px"> 
 		<input type="text" id="mapdepthdisp" editable="false"><br>
-	(The map is slightly offset, I'm trying to figure it out)<br>
+	<!-- (The map is slightly offset, I'm trying to figure it out)<br> -->
 		Minimum quake size: <br><input id="minQuakeSize" type="range" min="0" max="8" step="0.2" value="0">
 		<input type="text" id="minQuakeDisp"></input> <br>
 		Flyby radius: <br><input id="flybyRadius" type="range" min="0" max="15" step="0.1" value="2.3">
 		<input type="text" id="flybyRadiusDisp"></input> <br>
-		Flyby height: <br><input id="flybyHeight" type="range" min="-20" max="20" step="0.5" value="15">
+		Flyby height: <br><input id="flybyHeight" type="range" min="-20" max="100" step="0.5" value="15">
 		<input type="text" id="flybyHeightDisp"></input> <br>
+
+	Earthquake age in hours: 
+	<table><tr>	<th style="background-color:#f00; color:white; width:50px">0-4</th>
+				<th style="background-color:#f60; color:white; width:50px">4-12</th>
+				<th style="background-color:#ff0; color:black; width:50px">12-24</th>
+				<th style="background-color:#36c; color:white; width:50px">24-36</th>
+				<th style="background-color:#006; color:white; width:50px">36-58</th>
+	</tr></table>
+	<table><tr>	<th style="background-color:#0d0; color:white;">	Quakes larger than 3</th></tr></table>
+
 	One day I will try to explain what it is I'm actually trying to show you.
 	</div>
 

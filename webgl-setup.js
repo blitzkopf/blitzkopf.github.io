@@ -494,10 +494,10 @@ function drawMap(depth)
 {
 		
 	var depth = 6731-depth;
-	p1 = sphere2Cart(65.5,-18.52,depth);
+	p1 = sphere2Cart(65.515,-18.52,depth);
 	p2 = sphere2Cart(63.8,-18.55,depth);
 	p3 = sphere2Cart(65.45 ,-14.8,depth);
-	p4 = sphere2Cart(63.75,-15.08,depth);
+	p4 = sphere2Cart(63.75,-15.04,depth);
 	vertices = [
 	     p3.x,  p3.y,  p3.z,
          p4.x,  p4.y,  p4.z,
