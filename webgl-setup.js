@@ -395,12 +395,12 @@ function setLighting() {
 
 	gl.uniform3f(
 		shaderProgram.ambientColorUniform,
-		0.2, 0.2, 0.2 
+		0.4, 0.4, 0.4 
 	);
-	var lightingDirection = [ 0.0 , 0.0, -1.0 ];
+	var lightingDirection = [ 0.0 , -1.0, 1.0 ];
 	var adjustedLD = vec3.create();
 	vec3.normalize(lightingDirection, adjustedLD);
-	vec3.scale(adjustedLD, -1);
+	//vec3.scale(adjustedLD, 1);
 	gl.uniform3fv(shaderProgram.lightingDirectionUniform, adjustedLD);
 
 	gl.uniform3f(
