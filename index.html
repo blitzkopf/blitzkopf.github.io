@@ -27,13 +27,8 @@
     uniform sampler2D uSampler;
 
     void main(void) {
-		vec4 textureColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t))*vColor;
-        //gl_FragColor = vec4(textureColor.rgb * vLightWeighting, textureColor.a * uAlpha);
-		gl_FragColor = vec4(textureColor.rgb * vLightWeighting, textureColor.a);
-        //gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
-		//gl_FragColor = vec4(vColor.rgb*vLightWeighting,vColor.a);
-        //gl_FragColor = vColor;
-		//gl_FragColor = vec4(0.1, 1.0, 0.0, 1.0);
+		vec4 textureColor = texture2D(uSampler, vTextureCoord);
+		gl_FragColor = vec4(vColor.rgb*textureColor.rgb*vLightWeighting,vColor.a);                
     }
 </script>
 
@@ -62,10 +57,8 @@
 
     void main(void) {
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-		//vColor = aVertexColor;
 		vTextureCoord = aTextureCoord;
-		vColor = vec4(uVertexColor[0],uVertexColor[1],uVertexColor[2],uVertexColor[3]);
-		//vColor = vec4(0.1, 1.0, 0.0, 1.0);
+		vColor = uVertexColor;
 		if (!uUseLighting) {
 		  vLightWeighting = vec3(1.0, 1.0, 1.0);
 		} else {
@@ -281,13 +274,14 @@
 		initTexture();
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
-       gl.enable(gl.DEPTH_TEST);
-/*			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_ALPHA);
+//       gl.enable(gl.DEPTH_TEST);
+			gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			//gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+            
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             gl.enable(gl.BLEND);
-            gl.disable(gl.DEPTH_TEST);
-*/
+            gl.enable(gl.DEPTH_TEST);
+
 		
         tick();
 

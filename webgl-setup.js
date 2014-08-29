@@ -429,7 +429,7 @@ function drawSphere(pos,sz,color)
 	gl.bindBuffer(gl.ARRAY_BUFFER, icoVertexTextureCoordBuffer);
     gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, icoVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 		
-	gl.uniform4fv(shaderProgram.uColorAttribute, color);
+	gl.uniform4f(shaderProgram.uColorAttribute, color[0],color[1],color[2],color[3]);
 	gl.bindTexture(gl.TEXTURE_2D, whiteTexture); 
 
 	setMatrixUniforms();
@@ -515,7 +515,7 @@ function drawMap(depth)
 	//mat4.scale(mvMatrix,[100,100,100]);
 	setMatrixUniforms();
 
-	gl.uniform4fv(shaderProgram.uColorAttribute, [1.0, 1.0, 1.0, 1.0]);
+	gl.uniform4fv(shaderProgram.uColorAttribute, [1.0, 1.0, 1.0, 0.6]);
 	gl.bindBuffer(gl.ARRAY_BUFFER, mapVertexPositionBuffer)
 	gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, mapVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
