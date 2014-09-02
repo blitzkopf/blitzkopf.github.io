@@ -3,6 +3,31 @@
 <head>
 <title>Bunga Bunga</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<style type="text/css">
+#bunga-bunga-canvas{
+	background-color:#fff;
+	z-index:-1;
+	position: fixed; 
+	margin: 0
+}
+#timer{
+	background-color:#000;
+	color:#fff;
+	z-index:0;
+	position: relative;
+	width:500px;
+	height:30px;
+	margin: 0;
+} 
+#controls{ 
+	color: #aaa;
+	position: relative;
+	right: 0px;
+	margin: 0;
+}
+body{margin: 0}
+</style>
+
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -16,6 +41,8 @@
 <script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 <script type="text/javascript" src="jquery-2.1.1.js"></script>
+<script type="text/javascript" src="quake.js"></script>
+
 
 <script id="shader-fs" type="x-shader/x-fragment">
     precision mediump float;
@@ -78,9 +105,7 @@
 
 	var timeNow;
 
-	var firstQuakeTime;
-	var lastQuakeTime;
-	var duration;
+	var qParams;
 	
 	const earthRadius = 6731.0;
 
@@ -99,22 +124,9 @@
  	}
 	var animTime;
 
-	
-	function Quake(lat,lon,depth,sz,time) {
-		this.lat=lat;
-		this.lon=lon;
-		this.depth=depth;
-		this.size=sz;
-		this.time=time;
-	}
-	
-	Quake.prototype.getSize = function(time) {
-		return this.size/3;
-	}
-
 	function mapSize(q,time) {
-		var hours = (time - q.date ) / ( 1000*60*60);
-		if(time >= lastQuakeTime) {
+		var hours = (time - q.time ) / ( 1000*60*60);
+		if(time >= qParams.lastTime) {
 			hours = 4;
 		}
 		if (q.size >= 3) {
@@ -124,7 +136,7 @@
 	}	
 	
 	function mapColor(q,time) {
-		var hours = (time - q.date ) / ( 1000*60*60);
+		var hours = (time - q.time ) / ( 1000*60*60);
 		if (q.size >= 3 && animParams.greenGiant ) {
 			return [0.0, 1.0, 0.0 ,1.0 ];
 		}
@@ -138,9 +150,12 @@
 		}
 		else if(hours <= 36) {
 			return [ 0.2, 0.4, 0.8, 1.0]; // "#36c";
-		}
-		else {
+		} 		
+		else if(hours <= 48)
+		{
 			return [ 0.0, 0.0, 0.4, 1.0]; // "#006";
+		} else {
+			return [ 0.4, 0.4, 0.4, 0.3];
 		}
 
 	}
@@ -206,7 +221,7 @@ sizeMultiplier
 		for ( i in quakes) {
 			
 			q=quakes[i];
-			if(q.date < time && q.size >= animParams.minQuakeSize 
+			if(q.time < time && q.size >= animParams.minQuakeSize 
 				&& ( !animParams.dispVerifiedOnly || q.verified)) {
 				drawSphere(q.pos,mapSize(q,time),mapColor(q,time));
 			}
@@ -226,11 +241,13 @@ sizeMultiplier
 		if( t1 > 1.0) {
 			t1 = 1.0;
 		}
-		animTime = new Date(firstQuakeTime.getTime() + t1* duration);
+		//animTime = new Date(firstQuakeTime.getTime() + t1* duration);
+		animTime = new Date(qParams.firstTime.getTime() + t1* qParams.duration);
+
 
 		if(timeNow > timeStart + (animParams.animLength + animParams.finalSceneLength)*1000) {
 			 //timeStart = new Date().getTime();
-			loadData();
+			 loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=48-hoursago",1);
 		}
 
     }
@@ -242,23 +259,73 @@ sizeMultiplier
 		drawScene(animTime);        
     }
 
-	function loadData() {
-		$.getJSON("http://isapi.rasmuskr.dk/api/earthquakes/?date=48-hoursago",function(resp) {
-			quakes = resp.items;
-			//new Date(parseInt(data.date * 1000)).getTime();
-			firstQuakeTime = new Date(quakes[0].date * 1000);
-			lastQuakeTime = new Date(quakes[quakes.length-1].date*1000);
-			duration = lastQuakeTime - firstQuakeTime;
-			for ( i in quakes ) {
-				quakes[i].date=new Date(quakes[i].date *1000);
-				quakes[i].pos=sphere2Cart(quakes[i].lat, quakes[i].long, earthRadius - animParams.depthScale*quakes[i].depth);
-			}
+	function loadDataRasmuskr(url,clean) {
+		$.getJSON(url,function(resp) {
+			if (clean==1) 
+				quakes=[];
+			var lastTime;
+			var firstTime;
+			for (var i in resp.items) {
+				q=resp.items[i];
+				quakes.push(new Quake(q.lat,q.long,q.depth,new Date(q.date*1000),q.size,q.verified));
+			};
+			qParams=calculatePositions(quakes,animParams);
 			timeStart = new Date().getTime();
 		});
 
 		
 	}
+	function loadDataVedurJS(url,clean) {
+		$.ajax( {
+				dataType:'script',
+				url:url,
+				success:
+					function(resp) {
+						if (clean==1) 
+							quakes=[];
+						var lastTime;
+						var firstTime;
+						for (var i in qs) {
+							q=qs[i];
+							quakes.push(new Quake(q.lat,q.lon,q.depth,new Date(q.unixtime*1000),q.magnitude,q.verified));
+						};
+						qParams=calculatePositions(quakes,animParams);
+						timeStart = new Date().getTime();
+					},
+					error: function(a,b,c) {alert("error"+c);}
+				}
+		);
 
+		
+	}
+
+	function resize_canvas(){
+	    var canvas = document.getElementById("bunga-bunga-canvas");
+	    var controls = document.getElementById("controls");
+	    // Why the if statements?
+        canvas.width  = window.innerWidth;	    
+
+        canvas.height = window.innerHeight;
+	    gl.viewportWidth = canvas.width;
+		gl.viewportHeight = canvas.height;
+
+		controls.style.left=window.innerWidth-320;
+
+	}
+	function hide_controls(){
+		$("#innerC").toggle();
+	}
+
+function initGL(canvas) {
+    try {
+        gl = canvas.getContext("experimental-webgl");
+    } catch (e) {
+    }
+    if (!gl) {
+        alert("Could not initialise WebGL, sorry :-(");
+    }
+}
+	
     function webGLStart() {
 		/*$.getJSON("http://apisis.rasmuskr.dk/earthquake/is",function(resp) {
 			quakes = resp.results;
@@ -270,9 +337,27 @@ sizeMultiplier
 				quakes[i].pos=sphere2Cart(quakes[i].latitude, quakes[i].longitude, 6731.0 - 2.0*quakes[i].depth);
 			}
 		});*/
-		loadData();
+		loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=48-hoursago",1);
+       /* loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-19",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-20",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-21",0);
+		loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-22",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-23",0);
+
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-24",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-25",0);
+		loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-26",0);
+
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-27",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-28",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-29",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-30",0);
+        loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-31",0);
+*/
+		//loadDataVedurJS("qv.js",1)
         var canvas = document.getElementById("bunga-bunga-canvas");
         initGL(canvas);
+        resize_canvas();
         initShaders()
         initIcoSphereBuffer(2);
 		initCircleBuffer(360);
@@ -292,21 +377,19 @@ sizeMultiplier
         tick();
 
     }
-
+ 
 </script>
 
 
 </head>
 
 
-<body onload="webGLStart();">
-<div style="width:100%; overflow:hidden">
-	<div id="animation" style="float: left;">
-    	<canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
-		<div id="timer"></div>
-    </div>
-
-	<div id="controls" style="margin-left: 820px">
+<body onload="webGLStart();" onresize="resize_canvas();">
+<canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
+<div id="timer" ></div>
+	<div id="controls" >
+		<a href="javascript:void(0)" onclick="hide_controls();"> hide/show controls</a>
+		<div id="innerC">
 		<h1>Bunga-Bunga</h1>
 		<h2> Earthquake the movie </h2>
 		<h3> Earthquakes in Bárðarbunga/Dyngjujökull area in 3D animation</h3>
@@ -317,7 +400,7 @@ sizeMultiplier
 		<input type="text" id="sizeMultiplierDisp"></input> <br>
 		Minimum quake size: <br><input id="minQuakeSize" type="range" min="0" max="8" step="0.2" value="0">
 		<input type="text" id="minQuakeDisp"></input> <br>
-		<input id="dispVerifiedOnly" type="checkbox" "> Only display verified earthquakes</input>
+		<input id="dispVerifiedOnly" type="checkbox" > Only display verified earthquakes</input>
 		 <br>
 		Flyby radius: <br><input id="flybyRadius" type="range" min="0" max="15" step="0.1" value="2.3">
 		<input type="text" id="flybyRadiusDisp"></input> <br>
@@ -341,8 +424,7 @@ Also see the Icelandic Meteorological Institute <a href="http://www.vedur.is/skj
  data provided by <a href="http://www.rasmuskr.dk" target="_blank">RasmusKr</a> and <a href="https://www.vedur.is/"> Veðurstofa Íslands </a>
 
 	</div>
-
-</div>
+	</div>
 </div>
 
    </body>
