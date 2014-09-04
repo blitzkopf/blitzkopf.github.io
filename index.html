@@ -228,7 +228,7 @@ a:visited{
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
  
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 1000.0, pMatrix);
+        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 2000.0, pMatrix);
 
         mat4.identity(mvMatrix);
 		var lap = sphere2Cart(64.701,-17,earthRadius-animParams.lookAtDepth*animParams.depthScale);
@@ -466,7 +466,7 @@ function initGL(canvas) {
 		<h1>Bunga-Bunga</h1>
 		<h2> Earthquake the movie </h2>
 		<h3> Earthquakes in Bárðarbunga/Dyngjujökull area in 3D animation</h3>
-		Depth of map:<br><input id="mapdepth" type="range" min="-40" max="2" step="1" width="20px" heigth="100px"> 
+		Depth of map:<br><input id="mapdepth" type="range" min="-40" max="2" step="1" value="-15"> 
 		<input type="text" id="mapdepthdisp" editable="false" class="disp"><br>
 	<!-- (The map is slightly offset, I'm trying to figure it out)<br> -->
 		Quake size multiplier: <br><input id="sizeMultiplier" type="range" min="0" max="4" step="0.1" value="1">
