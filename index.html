@@ -5,13 +5,13 @@
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
 <style type="text/css">
 #bunga-bunga-canvas{
-	background-color:#fff;
+	background-color:#000;
 	z-index:-1;
 	position: fixed; 
 	margin: 0
 }
 #timer{
-	background-color:#000;
+	//background-color:#000;
 	color:#fff;
 	z-index:0;
 	position: relative;
@@ -24,6 +24,13 @@
 	position: relative;
 	right: 0px;
 	margin: 0;
+	width: 310px;
+}
+input.disp{
+	color:#777;
+	background-color:none;
+	width:4em;
+	//opacity: 0.5;
 }
 body{margin: 0}
 </style>
@@ -155,7 +162,7 @@ body{margin: 0}
 		{
 			return [ 0.0, 0.0, 0.4, 1.0]; // "#006";
 		} else {
-			return [ 0.4, 0.4, 0.4, 0.3];
+			return [ 0.4, 0.4, 0.4, 0.5];
 		}
 
 	}
@@ -200,8 +207,6 @@ body{margin: 0}
 
 		animParams.dispVerifiedOnly = document.getElementById("dispVerifiedOnly").checked;
 		animParams.greenGiant = document.getElementById("greenGiant").checked;
-
-sizeMultiplier
 		        
 		gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -295,6 +300,45 @@ sizeMultiplier
 					error: function(a,b,c) {alert("error"+c);}
 				}
 		);
+	}
+
+	function processVedurTab(text,clean) {
+		if (clean==1) 
+			quakes=[];
+
+		var lines = text.split(/(\r\n|\n\r*)\s*/);
+		for(var i=1 ; i< lines.length; i++) {
+			var data = lines[i].split(/\s+/);
+			if(data.length > 2) {
+				var year ;//,month,day, hour,min,sec;
+				year = data[1].substr(0,4);
+				month = data[1].substr(4,2);
+				day = data[1].substr(6,2);
+				hour = data[2].substr(0,2);
+				min = data[2].substr(2,2);
+				sec = data[2].substr(4);
+				quakes.push(new Quake(data[3],data[4],data[5],new Date(year,month-1,day,hour,min,sec),data[6]));
+			}
+		}
+		qParams=calculatePositions(quakes,animParams);
+		timeStart = new Date().getTime();
+	};
+
+	function handle_error(a,b,c) {
+		alert("error"+a);
+	}
+
+	function loadDataVedurTab(url,clean) {
+		$.ajax( {
+				dataType:'text',
+				url:url,
+				success:
+					function(resp) {
+						processVedurTab(resp,clean);
+					},
+					error: function(a,b,c) {handle_error(a,b,c)}
+				}
+		);
 
 		
 	}
@@ -302,8 +346,7 @@ sizeMultiplier
 	function resize_canvas(){
 	    var canvas = document.getElementById("bunga-bunga-canvas");
 	    var controls = document.getElementById("controls");
-	    // Why the if statements?
-        canvas.width  = window.innerWidth;	    
+	    canvas.width  = window.innerWidth;	    
 
         canvas.height = window.innerHeight;
 	    gl.viewportWidth = canvas.width;
@@ -327,6 +370,10 @@ function initGL(canvas) {
 }
 	
     function webGLStart() {
+        var canvas = document.getElementById("bunga-bunga-canvas");
+    	initGL(canvas);
+        resize_canvas();
+        initShaders();
 		/*$.getJSON("http://apisis.rasmuskr.dk/earthquake/is",function(resp) {
 			quakes = resp.results;
 			lastQuakeTime = new Date(quakes[0].timestamp);
@@ -337,7 +384,7 @@ function initGL(canvas) {
 				quakes[i].pos=sphere2Cart(quakes[i].latitude, quakes[i].longitude, 6731.0 - 2.0*quakes[i].depth);
 			}
 		});*/
-		loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=48-hoursago",1);
+		loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=72-hoursago",1);
        /* loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-19",0);
         loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-20",0);
         loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-21",0);
@@ -355,10 +402,13 @@ function initGL(canvas) {
         loadDataRasmuskr("http://isapi.rasmuskr.dk/api/earthquakes/?date=2014-08-31",0);
 */
 		//loadDataVedurJS("qv.js",1)
-        var canvas = document.getElementById("bunga-bunga-canvas");
-        initGL(canvas);
-        resize_canvas();
-        initShaders()
+		//loadDataVedurTab("http://hraun.vedur.is/ja/viku/2014/vika_34/listi",0);
+
+        /*loadDataVedurTab("listi.33",0);
+        loadDataVedurTab("listi.34",0);
+        loadDataVedurTab("listi.35",0);
+        loadDataVedurTab("listi.36",0);*/
+        
         initIcoSphereBuffer(2);
 		initCircleBuffer(360);
 		initMapBuffer();
@@ -387,32 +437,33 @@ function initGL(canvas) {
 <body onload="webGLStart();" onresize="resize_canvas();">
 <canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
 <div id="timer" ></div>
-	<div id="controls" >
+	<div id="controls"  >
 		<a href="javascript:void(0)" onclick="hide_controls();"> hide/show controls</a>
 		<div id="innerC">
 		<h1>Bunga-Bunga</h1>
 		<h2> Earthquake the movie </h2>
 		<h3> Earthquakes in Bárðarbunga/Dyngjujökull area in 3D animation</h3>
 		Depth of map:<br><input id="mapdepth" type="range" min="-40" max="2" step="1" width="20px" heigth="100px"> 
-		<input type="text" id="mapdepthdisp" editable="false"><br>
+		<input type="text" id="mapdepthdisp" editable="false" class="disp"><br>
 	<!-- (The map is slightly offset, I'm trying to figure it out)<br> -->
 		Quake size multiplier: <br><input id="sizeMultiplier" type="range" min="0" max="4" step="0.1" value="1">
-		<input type="text" id="sizeMultiplierDisp"></input> <br>
+		<input type="text" id="sizeMultiplierDisp" editable="false" class="disp"></input> <br>
 		Minimum quake size: <br><input id="minQuakeSize" type="range" min="0" max="8" step="0.2" value="0">
-		<input type="text" id="minQuakeDisp"></input> <br>
+		<input type="text" id="minQuakeDisp"  editable="false" class="disp"></input> <br>
 		<input id="dispVerifiedOnly" type="checkbox" > Only display verified earthquakes</input>
 		 <br>
 		Flyby radius: <br><input id="flybyRadius" type="range" min="0" max="15" step="0.1" value="2.3">
-		<input type="text" id="flybyRadiusDisp"></input> <br>
+		<input type="text" id="flybyRadiusDisp"  editable="false" class="disp"></input> <br>
 		Flyby height: <br><input id="flybyHeight" type="range" min="-20" max="100" step="0.5" value="15">
-		<input type="text" id="flybyHeightDisp"></input> <br>
+		<input type="text" id="flybyHeightDisp"  editable="false" class="disp"></input> <br>
 
 	Earthquake age in hours: 
 	<table><tr>	<th style="background-color:#f00; color:white; width:50px">0-4</th>
 				<th style="background-color:#f60; color:white; width:50px">4-12</th>
 				<th style="background-color:#ff0; color:black; width:50px">12-24</th>
 				<th style="background-color:#36c; color:white; width:50px">24-36</th>
-				<th style="background-color:#006; color:white; width:50px">36-58</th>
+				<th style="background-color:#006; color:white; width:50px">36-48</th>
+				<th style="background-color:#666; color:white; width:50px; opacity=0.4">48+</th>
 	</tr></table>
 	<table><tr>	<th style="background-color:#0d0; color:white;"> 
 		<input id="greenGiant" type="checkbox" checked>Quakes larger than 3</input>

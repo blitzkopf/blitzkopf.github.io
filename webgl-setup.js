@@ -13,6 +13,8 @@ var gl;
 
 
 
+
+
 function getShader(gl, id) {
     var shaderScript = document.getElementById(id);
     if (!shaderScript) {
@@ -384,7 +386,7 @@ function setLighting() {
 		shaderProgram.ambientColorUniform,
 		0.4, 0.4, 0.4 
 	);
-	var lightingDirection = [ 0.0 , -1.0, 1.0 ];
+	var lightingDirection = [ 1.0 , 1.0, 1.0 ];
 	var adjustedLD = vec3.create();
 	vec3.normalize(lightingDirection, adjustedLD);
 	//vec3.scale(adjustedLD, 1);
