@@ -4,9 +4,9 @@
 <meta property="og:title" content="Bunga Bunga"/>
 <meta property="og:description" content="3D animation of earthquakes in Vatnajökull area"/>
 <meta property="og:image" content="http://blitzkopf.github.io/bunga.png"/>
-
-<style type="text/css">
 <title>Bunga Bunga</title>
+<style type="text/css">
+
 #bunga-bunga-canvas{
 	background-color:#000;
 	z-index:-1;
@@ -40,7 +40,16 @@ input.disp{
 	width:4em;
 	//opacity: 0.5;
 }
-body{margin: 0}
+body{
+	margin: 0
+}
+a:link{
+	color:#fff;
+}
+
+a:visited{
+	color:#fff;
+}
 </style>
 
 <script>
@@ -438,13 +447,18 @@ function initGL(canvas) {
     }
  
 </script>
-
-
 </head>
 
 
 <body onload="webGLStart();" onresize="resize_canvas();">
-<canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&appId=395162553869365&version=v2.0";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script><canvas id="bunga-bunga-canvas" style="border: none;" width="800" height="800"></canvas>
 <div id="timer" ></div>
 	<div id="controls"  >
 		<a href="javascript:void(0)" onclick="hide_controls();"> hide/show controls</a>
@@ -479,6 +493,7 @@ function initGL(canvas) {
 	</th></tr></table>
 	The magnitude of each earthquake will detirmine the the size of the bubble.<br>
 Also see the Icelandic Meteorological Institute <a href="http://www.vedur.is/skjalftar-og-eldgos/jardskjalftar/vatnajokull/">  Vatnajökull page</a> <br>
+<div class="fb-like" data-href="http://blitzkopf.github.io/" data-layout="button_count" data-action="like" data-show-faces="true" data-share="true"></div>
  <div id="credits">
 <p class="credit-list">Created by <a href="mailto:blitzkopf@gmail.com">Yngvi Þór</a> using WebGL, inspired by <a href="http://baering.github.io">3dBulge</a> 
  data provided by <a href="http://www.rasmuskr.dk" target="_blank">RasmusKr</a> and <a href="https://www.vedur.is/"> Veðurstofa Íslands </a>
