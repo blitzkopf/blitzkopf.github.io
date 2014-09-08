@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
@@ -130,12 +131,12 @@ a:visited{
 <script type="text/javascript">
 
 	var timeNow;
-	var timeLast = new Date().getTime();
+	var timeLast;
 	var timeDelta;
 
 	var qParams;
 	
-	const earthRadius = 6731.0;
+	//earthRadius = 6731.0;
 
 	var animParams = {
 		depthScale: 4.0,
@@ -149,7 +150,8 @@ a:visited{
 		lookAtDepth: 5,
 		rotationSpeed: -1,
 		dispVerifiedOnly: false,
-		greenGiant: true
+		greenGiant: true,
+		firstTime: new Date().getTime()
  	}
 	var animTime;
 
@@ -498,6 +500,7 @@ function initGL(canvas) {
 }
 	
     function webGLStart() {
+		timeLast = new Date().getTime();
         var canvas = document.getElementById("bunga-bunga-canvas");
     	initGL(canvas);
         resize_canvas();
