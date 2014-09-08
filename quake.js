@@ -30,17 +30,28 @@ Quake.prototype.color = function(currentTime) {
 };
 function calculatePositions(qList,animParams) {
 	var params={};
+	var M=0;
+	var mr = vec3.create([0,0,0]);
 	for(i in qList) {
+		var q  = qList[i];
 
-		qList[i].pos = sphere2Cart(qList[i].lat, qList[i].lon, earthRadius - animParams.depthScale*qList[i].depth)
+		qList[i].pos = sphere2Cart(q.lat, q.lon, earthRadius - animParams.depthScale*q.depth)
 
-		if(qList[i].time < params.firstTime || params.firstTime == null) {
-			params.firstTime=qList[i].time;
+		if(q.time < params.firstTime || params.firstTime == null) {
+			params.firstTime=q.time;
 		}
-		if(qList[i].time > params.lastTime || params.lastTime == null) {
-			params.lastTime=qList[i].time;
+		if(q.time > params.lastTime || params.lastTime == null) {
+			params.lastTime=q.time;
 		}
+		M += q.size;
+		vec3.add(mr,[q.pos[0]*q.size,q.pos[1]*q.size,q.pos[2]*q.size]);
+
 	}
+	params.centerOfMass=[
+		mr[0]/M,
+		mr[1]/M,
+		mr[2]/M,
+	]
 	params.duration = params.lastTime - params.firstTime;
 	qList.sort(function(a,b){return b.time-a.time});
 	return params;

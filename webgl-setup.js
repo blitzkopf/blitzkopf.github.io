@@ -1,13 +1,13 @@
 var gl;
 
 	function sphere2Cart(lat,lon,r) {
-		var point = {};
+		var point = [];
 		var phi = degToRad(lat);
 		var theta = degToRad(90-lon);
 
-		point.x = r*Math.sin(phi)*Math.cos(theta);
-		point.y = r*Math.sin(phi)*Math.sin(theta);
-		point.z = r*Math.cos(phi);
+		point[0] = r*Math.sin(phi)*Math.cos(theta);
+		point[1] = r*Math.sin(phi)*Math.sin(theta);
+		point[2] = r*Math.cos(phi);
 		return point;
 	}
 
@@ -405,7 +405,7 @@ function drawSphere(pos,sz,color)
 
 	//sz=20;
 	/*mat4.translate(mvMatrix, [q.latitude, q.longitude, -q.depth/2]);*/
-	mat4.translate(mvMatrix, [pos.x, pos.y, pos.z]);
+	mat4.translate(mvMatrix, pos);
 
 	mat4.scale(mvMatrix, [ sz,sz,sz ]);
 
@@ -435,7 +435,7 @@ function drawEarthWF(pos,radius)
 {
     // draw earth wireframe
 	mvPushMatrix();
-	mat4.translate(mvMatrix, [pos.x, pos.y, pos.z]);
+	mat4.translate(mvMatrix, pos);
 	mat4.rotate(mvMatrix,Math.PI/2.0,[0,1,0]);
 	mat4.scale(mvMatrix,[radius,radius,radius]);
 	gl.bindBuffer(gl.ARRAY_BUFFER, circVertexPositionBuffer)
@@ -468,7 +468,7 @@ function drawEarthWF(pos,radius)
 		mvPushMatrix();
 		var sz = radius*Math.cos(lat*Math.PI/180);
 
-		mat4.translate(mvMatrix, [pos.x, pos.y, pos.z+radius*Math.sin(lat*Math.PI/180)]);
+		mat4.translate(mvMatrix, [pos[0], pos[1], pos[2]+radius*Math.sin(lat*Math.PI/180)]);
 		mat4.scale(mvMatrix,[sz,sz,sz]);
 
 		gl.uniform4fv(shaderProgram.uColorAttribute, [1.0, 1.0, 0, 1.0]);
@@ -488,10 +488,10 @@ function drawMap(depth)
 	p3 = sphere2Cart(65.45 ,-14.8,depth);
 	p4 = sphere2Cart(63.75,-15.04,depth);
 	vertices = [
-	     p3.x,  p3.y,  p3.z,
-         p4.x,  p4.y,  p4.z,
-         p1.x,  p1.y,  p1.z,
-         p2.x,  p2.y,  p2.z
+	     p3[0],  p3[1],  p3[2],
+         p4[0],  p4[1],  p4[2],
+         p1[0],  p1[1],  p1[2],
+         p2[0],  p2[1],  p2[2]
 	];
 
 	gl.bindBuffer(gl.ARRAY_BUFFER,mapVertexPositionBuffer);
@@ -530,9 +530,9 @@ function handleLoadedTexture(texture) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 
-//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); //gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //Prevents s-coordinate wrapping (repeating).
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); //Prevents t-coordinate wrapping (repeating).
+	//gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); //gl.NEAREST is also allowed, instead of gl.LINEAR, as neither mipmap.
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //Prevents s-coordinate wrapping (repeating).
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); //Prevents t-coordinate wrapping (repeating).
 
     gl.bindTexture(gl.TEXTURE_2D, null);
 
@@ -547,6 +547,7 @@ function initTexture() {
 	}
 
 	mapTexture.image.src = "map.png";
+	//mapTexture.image.src = 'http://maps.google.com/maps/api/staticmap?sensor=false&center=64.397,-17.0&zoom=8&size=512x512&maptype=terrain&format=png';
 }
 
 
