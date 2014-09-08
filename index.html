@@ -151,7 +151,6 @@ a:visited{
 		rotationSpeed: -1,
 		dispVerifiedOnly: false,
 		greenGiant: true,
-		firstTime: new Date().getTime()
  	}
 	var animTime;
 
@@ -288,6 +287,7 @@ a:visited{
     var lastTime = 0;
 
     function animate() {
+
         timeNow = new Date().getTime();
         timeDelta = timeNow-timeLast;
 		//t1 = ((timeNow - timeStart) % ((animParams.animLength+animParams.finalSceneLength)*1000))/(animParams.animLength*1000);
@@ -311,6 +311,8 @@ a:visited{
     function tick() {
         requestAnimFrame(tick);
         handleKeys();
+    	if(!qParams ) 
+    		return;
         animate();
 		drawScene(animTime);        
     }
