@@ -483,10 +483,11 @@ function drawMap(depth)
 {
 		
 	var depth = 6731-depth;
-	p1 = sphere2Cart(65.515,-18.52,depth);
-	p2 = sphere2Cart(63.8,-18.55,depth);
-	p3 = sphere2Cart(65.45 ,-14.8,depth);
-	p4 = sphere2Cart(63.75,-15.04,depth);
+	var box = mapTexture.box;
+	p1 = sphere2Cart(box.p1[0],box.p1[1],depth);
+	p2 = sphere2Cart(box.p2[0],box.p2[1],depth);
+	p3 = sphere2Cart(box.p3[0],box.p3[1],depth);
+	p4 = sphere2Cart(box.p4[0],box.p4[1],depth);
 	vertices = [
 	     p3[0],  p3[1],  p3[2],
          p4[0],  p4[1],  p4[2],
@@ -546,7 +547,24 @@ function initTexture() {
 	  handleLoadedTexture(mapTexture)
 	}
 
-	mapTexture.image.src = "map.png";
+	var box={};
+
+/*	mapTexture.image.src = "vatnajokull.png";
+
+	box.p1 = [65.515,-18.52];
+	box.p2 = [63.8,-18.55];
+	box.p3 = [65.45 ,-14.8];
+	box.p4 = [63.75,-15.04];*/
+
+	mapTexture.image.src = "reykjaneshryggur.png";
+
+	box.p1 = [64.25,-24.88]; // upper left
+	box.p2 = [62.9,-24.6];  // lower left 
+	box.p3 = [64.35,-21.1];  // upper right
+	box.p4 = [63.0,-21.0];  // lower right
+	
+	mapTexture.box=box;
+
 	//mapTexture.image.src = 'http://maps.google.com/maps/api/staticmap?sensor=false&center=64.397,-17.0&zoom=8&size=512x512&maptype=terrain&format=png';
 }
 
