@@ -556,12 +556,20 @@ function initTexture() {
 	box.p3 = [65.45 ,-14.8];
 	box.p4 = [63.75,-15.04];*/
 
-	mapTexture.image.src = "reykjaneshryggur.png";
+/*	mapTexture.image.src = "reykjaneshryggur.png";
 
 	box.p1 = [64.25,-24.88]; // upper left
 	box.p2 = [62.9,-24.6];  // lower left 
 	box.p3 = [64.35,-21.1];  // upper right
 	box.p4 = [63.0,-21.0];  // lower right
+*/	
+
+	mapTexture.image.src = "myrdalsjokull.png";
+
+	box.p1 = [64.2,-20.14]; // upper left
+	box.p2 = [63.35,-20.05];  // lower left 
+	box.p3 = [64.2,-18.5];  // upper right
+	box.p4 = [63.35,-18.51];  // lower right
 	
 	mapTexture.box=box;
 
