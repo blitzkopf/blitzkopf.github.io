@@ -539,7 +539,38 @@ function handleLoadedTexture(texture) {
 
   }
 
+maps = {}
+function loadMaps(){
+	$.getJSON('maps.json',{},function(resp) {
+			maps=resp;
+			var items = [];
+			$.each( maps, function( key, val ) {
+				items.push( "<option value='" + key + "'>" + key + "</option>" );
+			});
+
+			var sel;
+			sel = $( "<select/>", {
+				"class": "maps",
+				"id":"mapselect",
+				html: items.join( "" ),
+			}).click(function(){
+					loadTexture($("#mapselect").val());
+					//loadTexture("vatnajokull");
+				});
+			sel.appendTo( "#maplist" );
+			loadTexture('reykjaneshryggur');
+
+		});
+}
 var mapTexture;
+function loadTexture(mapName) {
+	mapTexture.image.src=maps[mapName].src;
+	mapTexture.box=maps[mapName].box;
+
+
+
+}
+
 function initTexture() {
 	mapTexture = gl.createTexture();
 	mapTexture.image = new Image();
@@ -548,32 +579,6 @@ function initTexture() {
 	}
 
 	var box={};
-
-/*	mapTexture.image.src = "vatnajokull.png";
-
-	box.p1 = [65.515,-18.52];
-	box.p2 = [63.8,-18.55];
-	box.p3 = [65.45 ,-14.8];
-	box.p4 = [63.75,-15.04];*/
-
-/*	mapTexture.image.src = "reykjaneshryggur.png";
-
-	box.p1 = [64.25,-24.88]; // upper left
-	box.p2 = [62.9,-24.6];  // lower left 
-	box.p3 = [64.35,-21.1];  // upper right
-	box.p4 = [63.0,-21.0];  // lower right
-*/	
-
-	mapTexture.image.src = "myrdalsjokull.png";
-
-	box.p1 = [64.2,-20.14]; // upper left
-	box.p2 = [63.35,-20.05];  // lower left 
-	box.p3 = [64.2,-18.5];  // upper right
-	box.p4 = [63.35,-18.51];  // lower right
-	
-	mapTexture.box=box;
-
-	//mapTexture.image.src = 'http://maps.google.com/maps/api/staticmap?sensor=false&center=64.397,-17.0&zoom=8&size=512x512&maptype=terrain&format=png';
 }
 
 

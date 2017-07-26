@@ -547,6 +547,7 @@ function initGL(canvas) {
 		initCircleBuffer(360);
 		initMapBuffer();
 		initTexture();
+		loadMaps();
 		//drawTexture();
 
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -613,6 +614,7 @@ function initGL(canvas) {
 		<h1>Bunga-Bunga</h1>
 		<h2> Earthquake the movie </h2>
 		<h3> Earthquakes in Bárðarbunga/Dyngjujökull area in 3D animation</h3>
+		<div id="maplist"></div>
 		Depth of map:(pgUp/pgDown)<br><input id="mapdepth" type="range" min="-40" max="2" step="1" value="-15"
 			onchange="rangeChange(this)" oninput="rangeChange(this)" >
 		<input type="text" id="mapdepthDisp" editable="false" class="disp"><br>
