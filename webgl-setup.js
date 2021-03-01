@@ -558,7 +558,7 @@ function loadMaps(){
 					//loadTexture("vatnajokull");
 				});
 			sel.appendTo( "#maplist" );
-			loadTexture('tjornes');
+			loadTexture('reykjaneshryggur');
 
 		});
 }
