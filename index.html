@@ -144,7 +144,7 @@ a:visited{
 		finalSceneLength: 30, //seconds
 		minQuakeSize: 0 ,//
 		sizeMultiplier: .2, //
-		mapdepth: -15, // km
+		mapdepth: -10, // km
 		flybyRadius: 100, // degrees
 		flybyHeight: -1, //
 		lookAtDepth: 5,
@@ -322,10 +322,13 @@ a:visited{
 		document.getElementById(inp.id+"Disp").value=animParams[inp.id];
 
 	} 
-	function initiRange(field){
+	function initRange(field){
 		document.getElementById(field).value=animParams[field];
 		document.getElementById(field+"Disp").value=animParams[field];
-		
+	}
+
+	function initCheck(field){
+		document.getElementById(field).checked=animParams[field];		
 	}
 
 	function stepRange(field,dir){
@@ -558,12 +561,14 @@ function initGL(canvas) {
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             gl.enable(gl.BLEND);
             gl.enable(gl.DEPTH_TEST);
-        initiRange("mapdepth");
-        initiRange("sizeMultiplier");
-        initiRange("minQuakeSize");
-        initiRange("flybyRadius");
-        initiRange("flybyHeight");
-        initiRange("rotationSpeed");
+        initRange("mapdepth");
+        initRange("sizeMultiplier");
+        initRange("minQuakeSize");
+        initRange("flybyRadius");
+        initRange("flybyHeight");
+        initRange("rotationSpeed");
+		initCheck("greenGiant");
+
         document.onkeydown = handleKeyDown;
     	document.onkeyup = handleKeyUp;	
         tick();
@@ -646,7 +651,7 @@ function initGL(canvas) {
 				<th style="background-color:#666; color:white; width:50px; opacity=0.4">48+</th>
 	</tr></table>
 	<table><tr>	<th style="background-color:#0d0; color:white;"> 
-		<input id="greenGiant" type="checkbox" checked>Quakes larger than 3</input>
+		<input id="greenGiant" type="checkbox" >Quakes larger than 3</input>
 	</th></tr></table>
 	The magnitude of each earthquake will detirmine the the size of the bubble.<br>
 Also see the Icelandic Meteorological Institute <a href="http://www.vedur.is/skjalftar-og-eldgos/jardskjalftar/vatnajokull/">  Vatnajökull page</a> <br>
