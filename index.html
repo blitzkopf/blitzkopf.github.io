@@ -160,6 +160,7 @@ a:visited{
 			hours = 4;
 		}
 		if (q.size >= 3) {
+			
 			return animParams.sizeMultiplier*q.size  / Math.min(0.2+hours,1);
 		}
 		return animParams.sizeMultiplier*q.size / Math.min(0.5+hours,1);
@@ -619,6 +620,8 @@ function initGL(canvas) {
 		<h1>Bunga-Bunga</h1>
 		<h2> Earthquake the movie </h2>
 		<h3> Earthquakes in Iceland in 3D animation</h3>
+		<h2>Try out <a href="http://bunga-bunga.yngvi.com.s3-website-eu-west-1.amazonaws.com/"> version 2 WIP</a></h2>
+		
 		Map overlay: <div id="maplist"></div>
 		Depth of map:(pgUp/pgDown)<br><input id="mapdepth" type="range" min="-40" max="2" step="1" value="-15"
 			onchange="rangeChange(this)" oninput="rangeChange(this)" >
